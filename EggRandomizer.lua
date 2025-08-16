@@ -1,5 +1,5 @@
 -- Egg Randomizer – by ScripterX
--- Compact GUI: Choose Egg | Randomize Hatch | Age Picker (1–100)
+-- Scrollable GUI: Egg Selector | Randomize Hatch | Age Picker (1–100)
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -14,45 +14,48 @@ local ScreenGui = Instance.new("ScreenGui", playerGui)
 ScreenGui.Name = "PetRandomizerGui"
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 220, 0, 180)
-Frame.Position = UDim2.new(0.5, -110, 0.4, -90)
-Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Frame.Size = UDim2.new(0, 240, 0, 200)
+Frame.Position = UDim2.new(0.5, -120, 0.4, -100)
+Frame.BackgroundColor3 = Color3.fromRGB(240,240,240)
 Frame.Active = true
 Frame.Draggable = true
 
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1,0,0,25)
 Title.Text = "Egg Randomizer – by ScripterX"
-Title.TextColor3 = Color3.fromRGB(255,255,255)
-Title.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Title.TextColor3 = Color3.fromRGB(0,0,0)
+Title.BackgroundColor3 = Color3.fromRGB(220,220,220)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
 
--- Buttons and input
-local EggBtn = Instance.new("TextButton", Frame)
-EggBtn.Size = UDim2.new(0.9,0,0,25)
-EggBtn.Position = UDim2.new(0.05,0,0.25,0)
-EggBtn.Text = "Choose Egg: Common Egg"
-EggBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-EggBtn.TextColor3 = Color3.fromRGB(255,255,255)
-EggBtn.Font = Enum.Font.Gotham
-EggBtn.TextSize = 14
+-- Scrolling egg selection
+local Scroller = Instance.new("ScrollingFrame", Frame)
+Scroller.Size = UDim2.new(0.9,0,0.4,0)
+Scroller.Position = UDim2.new(0.05,0,0.15,0)
+Scroller.CanvasSize = UDim2.new(0,0,0,0)
+Scroller.ScrollBarThickness = 6
+Scroller.BackgroundColor3 = Color3.fromRGB(255,255,255)
 
+local UIListLayout = Instance.new("UIListLayout", Scroller)
+UIListLayout.SortOrder = Enum.SortOrder.Name
+
+-- Hatch button
 local HatchBtn = Instance.new("TextButton", Frame)
 HatchBtn.Size = UDim2.new(0.9,0,0,25)
-HatchBtn.Position = UDim2.new(0.05,0,0.45,0)
+HatchBtn.Position = UDim2.new(0.05,0,0.62,0)
 HatchBtn.Text = "Randomize Hatch"
 HatchBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
 HatchBtn.TextColor3 = Color3.fromRGB(255,255,255)
 HatchBtn.Font = Enum.Font.GothamBold
 HatchBtn.TextSize = 14
 
+-- Age box
 local AgeBox = Instance.new("TextBox", Frame)
 AgeBox.Size = UDim2.new(0.9,0,0,25)
-AgeBox.Position = UDim2.new(0.05,0,0.65,0)
+AgeBox.Position = UDim2.new(0.05,0,0.8,0)
 AgeBox.PlaceholderText = "Enter Age (1–100)"
-AgeBox.BackgroundColor3 = Color3.fromRGB(60,60,60)
-AgeBox.TextColor3 = Color3.fromRGB(255,255,255)
+AgeBox.BackgroundColor3 = Color3.fromRGB(230,230,230)
+AgeBox.TextColor3 = Color3.fromRGB(0,0,0)
 AgeBox.Font = Enum.Font.Gotham
 AgeBox.TextSize = 14
 
@@ -74,19 +77,36 @@ local Pets = {
     ["Zen Egg"] = {"Kitsune","Kodama","Nihonzaru","Shiba Inu","Tanchozuru","Raiju","Kappa","Red Fox"}
 }
 
--- Egg selection cycle
-local eggNames = {}
-for name in pairs(Pets) do table.insert(eggNames, name) end
-table.sort(eggNames)
-local currentIndex = 1
+-- Create egg buttons in scroll frame
+local selectedEgg = nil
+for eggName in pairs(Pets) do
+    local Btn = Instance.new("TextButton", Scroller)
+    Btn.Size = UDim2.new(1, -10, 0, 25)
+    Btn.Text = eggName
+    Btn.BackgroundColor3 = Color3.fromRGB(240,240,240)
+    Btn.TextColor3 = Color3.fromRGB(0,0,0)
+    Btn.Font = Enum.Font.Gotham
+    Btn.TextSize = 14
 
-EggBtn.MouseButton1Click:Connect(function()
-    currentIndex = (currentIndex % #eggNames) + 1
-    EggBtn.Text = "Choose Egg: " .. eggNames[currentIndex]
-end)
+    Btn.MouseButton1Click:Connect(function()
+        selectedEgg = eggName
+        for _, b in pairs(Scroller:GetChildren()) do
+            if b:IsA("TextButton") then
+                b.BackgroundColor3 = Color3.fromRGB(240,240,240)
+            end
+        end
+        Btn.BackgroundColor3 = Color3.fromRGB(200,230,255)
+    end)
+end
+Scroller.CanvasSize = UDim2.new(0,0,0,#Scroller:GetChildren()*30)
 
--- Show result above the nearest egg in 3D world
+-- Billboard cleanup
+local activeBillboard = nil
 local function showAboveEgg(petName, age)
+    if activeBillboard then
+        activeBillboard:Destroy()
+    end
+
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -111,18 +131,19 @@ local function showAboveEgg(petName, age)
         local label = Instance.new("TextLabel", billboard)
         label.Size = UDim2.new(1,0,1,0)
         label.BackgroundTransparency = 1
-        label.Text = ("You got: %s (Age: %d)"):format(petName, age)
+        label.Text = ("%s (Age: %d)"):format(petName, age)
         label.TextScaled = true
-        label.TextColor3 = Color3.fromRGB(0,255,0)
+        label.TextColor3 = Color3.fromRGB(0,0,0)
         label.Font = Enum.Font.GothamBold
 
-        game.Debris:AddItem(billboard, 5)
+        activeBillboard = billboard
     end
 end
 
 -- Randomize logic
 HatchBtn.MouseButton1Click:Connect(function()
-    local pool = Pets[eggNames[currentIndex]]
+    if not selectedEgg then return end
+    local pool = Pets[selectedEgg]
     if not pool then return end
     local pet = pool[math.random(1, #pool)]
     local age = tonumber(AgeBox.Text)
