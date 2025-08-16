@@ -1,133 +1,307 @@
--- Egg Randomizer – by ScripterX
--- Compact GUI: Choose Egg | Randomize Hatch | Age Picker (1–100)
+--// ─────────────────────────────────────────────────────────────────────────────
+--// Grow a Garden – Egg Randomizer (Executor/Studio friendly)
+--// Made By: ScripterX  |  Version: 5.1
+--// ─────────────────────────────────────────────────────────────────────────────
 
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
 
--- Cleanup existing GUI
-if playerGui:FindFirstChild("PetRandomizerGui") then
-    playerGui.PetRandomizerGui:Destroy()
-end
+--// Services
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
 
--- GUI setup
-local ScreenGui = Instance.new("ScreenGui", playerGui)
-ScreenGui.Name = "PetRandomizerGui"
+-- random seed
+math.randomseed(os.clock()*1e6)
 
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 220, 0, 180)
-Frame.Position = UDim2.new(0.5, -110, 0.4, -90)
-Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-Frame.Active = true
-Frame.Draggable = true
-
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1,0,0,25)
-Title.Text = "Egg Randomizer – by ScripterX"
-Title.TextColor3 = Color3.fromRGB(255,255,255)
-Title.BackgroundColor3 = Color3.fromRGB(40,40,40)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
-
--- Buttons and input
-local EggBtn = Instance.new("TextButton", Frame)
-EggBtn.Size = UDim2.new(0.9,0,0,25)
-EggBtn.Position = UDim2.new(0.05,0,0.25,0)
-EggBtn.Text = "Choose Egg: Common Egg"
-EggBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-EggBtn.TextColor3 = Color3.fromRGB(255,255,255)
-EggBtn.Font = Enum.Font.Gotham
-EggBtn.TextSize = 14
-
-local HatchBtn = Instance.new("TextButton", Frame)
-HatchBtn.Size = UDim2.new(0.9,0,0,25)
-HatchBtn.Position = UDim2.new(0.05,0,0.45,0)
-HatchBtn.Text = "Randomize Hatch"
-HatchBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
-HatchBtn.TextColor3 = Color3.fromRGB(255,255,255)
-HatchBtn.Font = Enum.Font.GothamBold
-HatchBtn.TextSize = 14
-
-local AgeBox = Instance.new("TextBox", Frame)
-AgeBox.Size = UDim2.new(0.9,0,0,25)
-AgeBox.Position = UDim2.new(0.05,0,0.65,0)
-AgeBox.PlaceholderText = "Enter Age (1–100)"
-AgeBox.BackgroundColor3 = Color3.fromRGB(60,60,60)
-AgeBox.TextColor3 = Color3.fromRGB(255,255,255)
-AgeBox.Font = Enum.Font.Gotham
-AgeBox.TextSize = 14
-
--- Egg → Pets mapping
-local Pets = {
-    ["Common Egg"] = {"Dog","Golden Lab","Bunny"},
-    ["Bug Egg"] = {"Caterpillar","Snail","Giant Ant","Praying Mantis","Dragonfly"},
-    ["Common Summer Egg"] = {"Starfish","Seagull","Crab"},
-    ["Rare Summer Egg"] = {"Flamingo","Toucan","Sea Turtle","Orangutan","Seal"},
-    ["Paradise Egg"] = {"Ostrich","Peacock","Capybara","Mimic Octopus"},
-    ["Mythical Egg"] = {"Grey Mouse","Brown Mouse","Squirrel","Red Giant Ant","Red Fox"},
-    ["Gourmet Egg"] = {"Bagel Bunny","Pancake Mole","Sushi Bear","Spaghetti Sloth","French Fry Ferret"},
-    ["Sprout Egg"] = {"Dairy Cow","Jackalope","Sapling","Golem","Golden Goose"},
-    ["Anti Bee Egg"] = {"Wasp","Tarantula Hawk","Moth","Butterfly","Disco Bee"},
-    ["Bee Egg"] = {"Bee","Honey Bee","Bear Bee","Petal Bee","Queen Bee"},
-    ["Night Egg"] = {"Hedgehog","Mole","Frog","Echo Frog","Night Owl","Raccoon"},
-    ["Primal Egg"] = {"Parasaurolophus","Iguanodon","Pachycephalosaurus","Dilophosaurus","Ankylosaurus","Spinosaurus"},
-    ["Dinosaur Egg"] = {"T-Rex","Brontosaurus","Pterodactyl","Raptor","Stegosaurus"},
-    ["Zen Egg"] = {"Kitsune","Kodama","Nihonzaru","Shiba Inu","Tanchozuru","Raiju","Kappa","Red Fox"}
+--// Egg Pools
+local EggPools = {
+    ["Common egg"] = {"Dog","Golden Lab","Bunny"},
+    ["Bug egg"] = {"Caterpillar","Snail","Giant Ant","Praying Mantis","Dragonfly"},
+    ["Common Summer egg"] = {"Starfish","Seagull","Crab"},
+    ["Rare Summer egg"] = {"Flamingo","Toucan","Sea Turtle","Orangutan","Seal"},
+    ["Paradise egg"] = {"Ostrich","Peacock","Capybara","Mimic Octopus"},
+    ["Mythical egg"] = {"Grey Mouse","Brown Mouse","Squirrel","Red Giant Ant","Red Fox"},
+    ["Gourmet egg"] = {"Bagel Bunny","Pancake Mole","Sushi Bear","Spaghetti Sloth","French Fry Ferret"},
+    ["Sprout egg"] = {"Dairy Cow","Jackalope","Sapling","Golem","Golden Goose"},
+    ["Anti Bee egg"] = {"Wasp","Tarantula Hawk","Moth","Butterfly","Disco Bee"},
+    ["Bee egg"] = {"Bee","Honey Bee","Bear Bee","Petal Bee","Queen Bee"},
+    ["Night egg"] = {"Hedgehog","Mole","Frog","Echo Frog","Night Owl","Raccoon"},
+    ["Primal egg"] = {"Parasaurolophus","Iguanodon","Pachycephalosaurus","Dilophosaurus","Ankylosaurus","Spinosaurus"},
+    ["Dinosaur egg"] = {"T-Rex","Brontosaurus","Pterodactyl","Raptor","Stegosaurus"},
+    ["Zen egg"] = {"Kitsune","Kodama","Nihonzaru","Shiba Inu","Tanchozuru","Kappa"},
 }
 
--- Egg selection cycle
-local eggNames = {}
-for name in pairs(Pets) do table.insert(eggNames, name) end
-table.sort(eggNames)
-local currentIndex = 1
-
-EggBtn.MouseButton1Click:Connect(function()
-    currentIndex = (currentIndex % #eggNames) + 1
-    EggBtn.Text = "Choose Egg: " .. eggNames[currentIndex]
-end)
-
--- Show result above the nearest egg in 3D world
-local function showAboveEgg(petName, age)
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    local nearest, dist = nil, math.huge
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name:lower():find("egg") then
-            local d = (obj.Position - hrp.Position).magnitude
-            if d < dist and d < 30 then
-                nearest, dist = obj, d
-            end
-        end
-    end
-
-    if nearest then
-        local billboard = Instance.new("BillboardGui", nearest)
-        billboard.Size = UDim2.new(0,200,0,50)
-        billboard.Adornee = nearest
-        billboard.AlwaysOnTop = true
-        billboard.StudsOffset = Vector3.new(0,3,0)
-
-        local label = Instance.new("TextLabel", billboard)
-        label.Size = UDim2.new(1,0,1,0)
-        label.BackgroundTransparency = 1
-        label.Text = ("You got: %s (Age: %d)"):format(petName, age)
-        label.TextScaled = true
-        label.TextColor3 = Color3.fromRGB(0,255,0)
-        label.Font = Enum.Font.GothamBold
-
-        game.Debris:AddItem(billboard, 5)
+-- case-insensitive name resolver (handles tiny capitalization mismatches)
+local function resolveEggKey(name: string)
+    if EggPools[name] then return name end
+    local lower = string.lower(name)
+    for k,_ in pairs(EggPools) do
+        if string.lower(k) == lower then return k end
     end
 end
 
--- Randomize logic
-HatchBtn.MouseButton1Click:Connect(function()
-    local pool = Pets[eggNames[currentIndex]]
-    if not pool then return end
-    local pet = pool[math.random(1, #pool)]
-    local age = tonumber(AgeBox.Text)
-    if not age or age < 1 or age > 100 then
-        age = math.random(1, 100)
+-- get a BasePart to use as Adornee for Billboards
+local function getAdorneePart(obj: Instance): BasePart?
+    if obj:IsA("BasePart") then return obj end
+    if obj:IsA("Model") then
+        if obj.PrimaryPart then return obj.PrimaryPart end
+        for _,d in ipairs(obj:GetDescendants()) do
+            if d:IsA("BasePart") then return d end
+        end
     end
-    showAboveEgg(pet, age)
+    return nil
+end
+
+-- find all eggs currently in workspace matching EggPools
+local function findEggs()
+    local eggs = {}
+    for _, inst in ipairs(workspace:GetDescendants()) do
+        local key = resolveEggKey(inst.Name)
+        if key then
+            table.insert(eggs, {instance = inst, key = key})
+        end
+    end
+    return eggs
+end
+
+-- Billboard helper (creates if missing, updates otherwise)
+local function ensureBillboard(parentObj: Instance, name: string, adorneePart: BasePart, sizeX, sizeY, offsetY)
+    local bb = parentObj:FindFirstChild(name)
+    if not (bb and bb:IsA("BillboardGui")) then
+        bb = Instance.new("BillboardGui")
+        bb.Name = name
+        bb.Size = UDim2.fromOffset(sizeX, sizeY)
+        bb.AlwaysOnTop = true
+        bb.LightInfluence = 0
+        bb.MaxDistance = 1000
+        bb.StudsOffsetWorldSpace = Vector3.new(0, offsetY, 0)
+        bb.Adornee = adorneePart
+        bb.Parent = parentObj
+
+        local label = Instance.new("TextLabel")
+        label.Name = "Label"
+        label.Size = UDim2.fromScale(1,1)
+        label.BackgroundTransparency = 1
+        label.TextScaled = true
+        label.TextWrapped = true
+        label.Parent = bb
+    else
+        bb.Adornee = adorneePart
+        bb.StudsOffsetWorldSpace = Vector3.new(0, offsetY, 0)
+        bb.Size = UDim2.fromOffset(sizeX, sizeY)
+        bb.AlwaysOnTop = true
+    end
+    return bb :: BillboardGui
+end
+
+-- ESP: show pool contents above each egg
+local function showESPForEgg(eggInst: Instance, eggKey: string)
+    local part = getAdorneePart(eggInst)
+    if not part then return end
+    local bb = ensureBillboard(eggInst, "ESP_Billboard", part, 260, 90, 3)
+    local lbl = bb:FindFirstChild("Label") :: TextLabel
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextColor3 = Color3.fromRGB(255,255,0)
+    lbl.Text = table.concat(EggPools[eggKey], ", ")
+end
+
+local function hideESPForEgg(eggInst: Instance)
+    local bb = eggInst:FindFirstChild("ESP_Billboard")
+    if bb then bb:Destroy() end
+end
+
+-- Randomize: pick a pet, store it, and display above egg (persists until reroll/egg gone)
+local function rerollEgg(eggInst: Instance, eggKey: string)
+    local pool = EggPools[eggKey]
+    if not pool then return end
+    local chosen = pool[math.random(1, #pool)]
+
+    -- store chosen as a child value (client-side)
+    local prev = eggInst:FindFirstChild("AssignedPet")
+    if prev then prev:Destroy() end
+    local sv = Instance.new("StringValue")
+    sv.Name = "AssignedPet"
+    sv.Value = chosen
+    sv.Parent = eggInst
+
+    -- display label
+    local part = getAdorneePart(eggInst)
+    if not part then return end
+
+    local bb = ensureBillboard(eggInst, "Result_Billboard", part, 220, 60, 2)
+    local lbl = bb:FindFirstChild("Label") :: TextLabel
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextColor3 = Color3.fromRGB(0,255,0)
+    lbl.Text = chosen
+end
+
+-- Auto Age 50: best-effort set common "Age" holders to 50 (NumberValue/IntValue/Attribute)
+local function autoAge50()
+    for _, inst in ipairs(workspace:GetDescendants()) do
+        -- values named Age
+        local v = inst:FindFirstChild("Age")
+        if v and (v:IsA("NumberValue") or v:IsA("IntValue")) then
+            v.Value = 50
+        end
+        -- attribute named Age
+        if (inst:IsA("Model") or inst:IsA("BasePart")) and inst:GetAttribute("Age") ~= nil then
+            inst:SetAttribute("Age", 50)
+        end
+    end
+end
+
+-- Cleanup any existing UI
+local function safeRootGui()
+    local ok, res = pcall(function()
+        return (gethui and gethui()) or CoreGui
+    end)
+    if ok and res then return res end
+    return LocalPlayer:WaitForChild("PlayerGui")
+end
+
+local RootGui = safeRootGui()
+local existing = RootGui:FindFirstChild("EggRandomizerUI")
+if existing then existing:Destroy() end
+
+--// GUI Build
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "EggRandomizerUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = RootGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.fromOffset(300, 200)
+MainFrame.Position = UDim2.new(0.3, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(130, 70, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Parent = ScreenGui
+
+-- draggable (simple + mobile-friendly)
+do
+    local dragging, dragInput, dragStart, startPos
+    MainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    MainFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+-- title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Text = "EGG RANDOMIZER"
+Title.Font = Enum.Font.GothamBold
+Title.TextColor3 = Color3.fromRGB(0, 255, 0)
+Title.TextScaled = true
+Title.Parent = MainFrame
+
+-- made by
+local MadeBy = Instance.new("TextLabel")
+MadeBy.Size = UDim2.new(1, 0, 0, 20)
+MadeBy.Position = UDim2.new(0, 0, 0.17, 0)
+MadeBy.BackgroundTransparency = 1
+MadeBy.Text = "Made By: ScripterX"
+MadeBy.Font = Enum.Font.Gotham
+MadeBy.TextColor3 = Color3.fromRGB(255, 255, 255)
+MadeBy.TextScaled = true
+MadeBy.Parent = MainFrame
+
+-- ESP toggle (default ON)
+local ESPButton = Instance.new("TextButton")
+ESPButton.Size = UDim2.new(0.9, 0, 0, 30)
+ESPButton.Position = UDim2.new(0.05, 0, 0.35, 0)
+ESPButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+ESPButton.Text = "👁 ESP: ON"
+ESPButton.Font = Enum.Font.GothamBold
+ESPButton.TextScaled = true
+ESPButton.TextColor3 = Color3.fromRGB(255,255,255)
+ESPButton.Parent = MainFrame
+
+-- Auto Roll
+local RollButton = Instance.new("TextButton")
+RollButton.Size = UDim2.new(0.9, 0, 0, 30)
+RollButton.Position = UDim2.new(0.05, 0, 0.55, 0)
+RollButton.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
+RollButton.Text = "🎲Auto Roll Egg🎲"
+RollButton.Font = Enum.Font.GothamBold
+RollButton.TextScaled = true
+RollButton.TextColor3 = Color3.fromRGB(255,255,255)
+RollButton.Parent = MainFrame
+
+-- Auto Age 50
+local AgeButton = Instance.new("TextButton")
+AgeButton.Size = UDim2.new(0.9, 0, 0, 30)
+AgeButton.Position = UDim2.new(0.05, 0, 0.75, 0)
+AgeButton.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
+AgeButton.Text = "🐵Auto Age 50 Pet"
+AgeButton.Font = Enum.Font.GothamBold
+AgeButton.TextScaled = true
+AgeButton.TextColor3 = Color3.fromRGB(255,255,255)
+AgeButton.Parent = MainFrame
+
+-- version
+local Version = Instance.new("TextLabel")
+Version.Size = UDim2.new(1, 0, 0, 20)
+Version.Position = UDim2.new(0, 0, 0.9, 0)
+Version.BackgroundTransparency = 1
+Version.Text = "Version: 5.1"
+Version.Font = Enum.Font.Gotham
+Version.TextColor3 = Color3.fromRGB(255, 255, 255)
+Version.TextScaled = true
+Version.Parent = MainFrame
+
+-- Button logic
+local espEnabled = true
+
+local function refreshESP()
+    for _, data in ipairs(findEggs()) do
+        if espEnabled then
+            showESPForEgg(data.instance, data.key)
+        else
+            hideESPForEgg(data.instance)
+        end
+    end
+end
+
+ESPButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    ESPButton.Text = espEnabled and "👁 ESP: ON" or "👁 ESP: OFF"
+    refreshESP()
 end)
+
+RollButton.MouseButton1Click:Connect(function()
+    for _, data in ipairs(findEggs()) do
+        rerollEgg(data.instance, data.key)
+    end
+end)
+
+AgeButton.MouseButton1Click:Connect(function()
+    autoAge50()
+end)
+
+-- initial ESP render
+refreshESP()
+
+-- if eggs get removed (hatched), their billboards/values go with them naturally.
+-- reroll keeps pet name above the egg until you press "🎲Auto Roll Egg🎲" again.
