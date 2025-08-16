@@ -1,188 +1,186 @@
--- Egg Randomizer – Grow a Garden Theme by ScripterX (Final Modified)
+--[[  
+    Roblox "Grow a Garden" Egg Randomizer
+    Version: 4.0
+    Features:
+    - Auto detects eggs in workspace
+    - Randomizes pet results from defined pools
+    - ESP shows possible pets
+    - Auto Age (50 pets loop)
+    - Draggable GUI
+--]]
 
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
--- Cleanup existing GUI
-if playerGui:FindFirstChild("PetRandomizerGui") then
-    playerGui.PetRandomizerGui:Destroy()
-end
-
--- GUI setup
-local ScreenGui = Instance.new("ScreenGui", playerGui)
-ScreenGui.Name = "PetRandomizerGui"
-
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 260, 0, 220)
-Frame.Position = UDim2.new(0.5, -130, 0.4, -110)
-Frame.BackgroundColor3 = Color3.fromRGB(102, 51, 0) -- Soil brown
-Frame.BorderSizePixel = 3
-Frame.Active = true
-Frame.Draggable = true
-Frame.ClipsDescendants = true
-Frame.BackgroundTransparency = 0.05
-
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1,0,0,30)
-Title.Text = "🌱 Egg Randomizer – Grow a Garden 🌱"
-Title.TextColor3 = Color3.fromRGB(255,255,255)
-Title.BackgroundColor3 = Color3.fromRGB(34,139,34) -- Garden green
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-
--- Egg Selector
-local EggBox = Instance.new("TextButton", Frame)
-EggBox.Size = UDim2.new(0.9,0,0,30)
-EggBox.Position = UDim2.new(0.05,0,0.18,0)
-EggBox.Text = "Select Egg"
-EggBox.BackgroundColor3 = Color3.fromRGB(139, 69, 19)
-EggBox.TextColor3 = Color3.fromRGB(255,255,255)
-EggBox.Font = Enum.Font.Gotham
-EggBox.TextSize = 14
-EggBox.AutoButtonColor = true
-
--- Scrollable Egg List
-local Scroller = Instance.new("ScrollingFrame", Frame)
-Scroller.Size = UDim2.new(0.9,0,0.4,0)
-Scroller.Position = UDim2.new(0.05,0,0.18,0)
-Scroller.CanvasSize = UDim2.new(0,0,0,0)
-Scroller.ScrollBarThickness = 6
-Scroller.BackgroundColor3 = Color3.fromRGB(205, 133, 63)
-Scroller.Visible = false
-Scroller.ClipsDescendants = true
-
-local UIListLayout = Instance.new("UIListLayout", Scroller)
-UIListLayout.Padding = UDim.new(0,4)
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- 🎲 Randomize button
-local HatchBtn = Instance.new("TextButton", Frame)
-HatchBtn.Size = UDim2.new(0.9,0,0,30)
-HatchBtn.Position = UDim2.new(0.05,0,0.65,0)
-HatchBtn.Text = "🎲 Randomize 🎲"
-HatchBtn.BackgroundColor3 = Color3.fromRGB(46,139,87)
-HatchBtn.TextColor3 = Color3.fromRGB(255,255,255)
-HatchBtn.Font = Enum.Font.GothamBold
-HatchBtn.TextSize = 14
-
--- Age box
-local AgeBox = Instance.new("TextBox", Frame)
-AgeBox.Size = UDim2.new(0.9,0,0,30)
-AgeBox.Position = UDim2.new(0.05,0,0.82,0)
-AgeBox.PlaceholderText = "Enter Age (1–100)"
-AgeBox.BackgroundColor3 = Color3.fromRGB(222,184,135)
-AgeBox.TextColor3 = Color3.fromRGB(0,0,0)
-AgeBox.Font = Enum.Font.Gotham
-AgeBox.TextSize = 14
-
--- Egg → Pets mapping
-local Pets = {
-    ["Common Egg"] = {"Dog","Golden Lab","Bunny"},
-    ["Bug Egg"] = {"Caterpillar","Snail","Giant Ant","Praying Mantis","Dragonfly"},
-    ["Common Summer Egg"] = {"Starfish","Seagull","Crab"},
-    ["Rare Summer Egg"] = {"Flamingo","Toucan","Sea Turtle","Orangutan","Seal"},
-    ["Paradise Egg"] = {"Ostrich","Peacock","Capybara","Mimic Octopus"},
-    ["Mythical Egg"] = {"Grey Mouse","Brown Mouse","Squirrel","Red Giant Ant","Red Fox"},
-    ["Gourmet Egg"] = {"Bagel Bunny","Pancake Mole","Sushi Bear","Spaghetti Sloth","French Fry Ferret"},
-    ["Sprout Egg"] = {"Dairy Cow","Jackalope","Sapling","Golem","Golden Goose"},
-    ["Anti Bee Egg"] = {"Wasp","Tarantula Hawk","Moth","Butterfly","Disco Bee"},
-    ["Bee Egg"] = {"Bee","Honey Bee","Bear Bee","Petal Bee","Queen Bee"},
-    ["Night Egg"] = {"Hedgehog","Mole","Frog","Echo Frog","Night Owl","Raccoon"},
-    ["Primal Egg"] = {"Parasaurolophus","Iguanodon","Pachycephalosaurus","Dilophosaurus","Ankylosaurus","Spinosaurus"},
-    ["Dinosaur Egg"] = {"T-Rex","Brontosaurus","Pterodactyl","Raptor","Stegosaurus"},
-    ["Zen Egg"] = {"Kitsune","Kodama","Nihonzaru","Shiba Inu","Tanchozuru","Raiju","Kappa","Red Fox"}
+-- // Egg Pools
+local EggPools = {
+    ["Common egg"] = {"Dog", "Golden Lab", "Bunny"},
+    ["Bug egg"] = {"Caterpillar", "Snail", "Giant Ant", "Praying Mantis", "Dragonfly"},
+    ["Common Summer egg"] = {"Starfish", "Seagull", "Crab"},
+    ["Rare Summer egg"] = {"Flamingo", "Toucan", "Sea Turtle", "Orangutan", "Seal"},
+    ["Paradise egg"] = {"Ostrich", "Peacock", "Capybara", "Mimic Octopus"},
+    ["Mythical egg"] = {"Grey Mouse", "Brown Mouse", "Squirrel", "Red Giant Ant", "Red Fox"},
+    ["Gourmet egg"] = {"Bagel Bunny", "Pancake Mole", "Sushi Bear", "Spaghetti Sloth", "French Fry Ferret"},
+    ["Sprout egg"] = {"Dairy Cow", "Jackalope", "Sapling", "Golem", "Golden Goose"},
+    ["Anti Bee egg"] = {"Wasp", "Tarantula Hawk", "Moth", "Butterfly", "Disco Bee"},
+    ["Bee egg"] = {"Bee", "Honey Bee", "Bear Bee", "Petal Bee", "Queen Bee"},
+    ["Night egg"] = {"Hedgehog", "Mole", "Frog", "Echo Frog", "Night Owl", "Raccoon"},
+    ["Primal egg"] = {"Parasaurolophus", "Iguanodon", "Pachycephalosaurus", "Dilophosaurus", "Ankylosaurus", "Spinosaurus"},
+    ["Dinosaur egg"] = {"T-Rex", "Brontosaurus", "Pterodactyl", "Raptor", "Stegosaurus"},
+    ["Zen egg"] = {"Kitsune", "Kodama", "Nihonzaru", "Shiba Inu", "Tanchozuru", "Kappa"},
 }
 
--- Variables
-local selectedEgg = nil
-local activePetPopup = nil
+-- // GUI Setup
+local player = game.Players.LocalPlayer
+local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+ScreenGui.ResetOnSpawn = false
 
--- Egg button generator
-for eggName in pairs(Pets) do
-    local Btn = Instance.new("TextButton", Scroller)
-    Btn.Size = UDim2.new(1, -10, 0, 25)
-    Btn.Text = eggName
-    Btn.BackgroundColor3 = Color3.fromRGB(240,240,240)
-    Btn.TextColor3 = Color3.fromRGB(0,0,0)
-    Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 14
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 300, 0, 200)
+MainFrame.Position = UDim2.new(0.3, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(130, 70, 20)
+MainFrame.Active = true
 
-    Btn.MouseButton1Click:Connect(function()
-        selectedEgg = eggName
-        EggBox.Text = "🥚 " .. eggName
-        Scroller.Visible = false
-        EggBox.Visible = true
-    end)
-end
-Scroller.CanvasSize = UDim2.new(0,0,0,#Scroller:GetChildren()*30)
+-- Title
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Text = "🥚 EGG RANDOMIZER 🥚"
+Title.Font = Enum.Font.GothamBold
+Title.TextColor3 = Color3.fromRGB(0, 255, 0)
+Title.TextScaled = true
 
-EggBox.MouseButton1Click:Connect(function()
-    EggBox.Visible = false
-    Scroller.Visible = true
+-- ESP Button
+local ESPButton = Instance.new("TextButton", MainFrame)
+ESPButton.Size = UDim2.new(0.9, 0, 0, 30)
+ESPButton.Position = UDim2.new(0.05, 0, 0.35, 0)
+ESPButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+ESPButton.Text = "👁 Show Egg Contents"
+ESPButton.Font = Enum.Font.GothamBold
+ESPButton.TextScaled = true
+ESPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Roll Button
+local RollButton = Instance.new("TextButton", MainFrame)
+RollButton.Size = UDim2.new(0.9, 0, 0, 30)
+RollButton.Position = UDim2.new(0.05, 0, 0.55, 0)
+RollButton.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
+RollButton.Text = "🎲 Roll Random Pet"
+RollButton.Font = Enum.Font.GothamBold
+RollButton.TextScaled = true
+RollButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Auto Age Button
+local AgeButton = Instance.new("TextButton", MainFrame)
+AgeButton.Size = UDim2.new(0.9, 0, 0, 30)
+AgeButton.Position = UDim2.new(0.05, 0, 0.75, 0)
+AgeButton.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
+AgeButton.Text = "🐵 Auto Age (50 pets)"
+AgeButton.Font = Enum.Font.GothamBold
+AgeButton.TextScaled = true
+AgeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Version Label
+local Version = Instance.new("TextLabel", MainFrame)
+Version.Size = UDim2.new(1, 0, 0, 20)
+Version.Position = UDim2.new(0, 0, 0.9, 0)
+Version.BackgroundTransparency = 1
+Version.Text = "Version: 4.0"
+Version.Font = Enum.Font.Gotham
+Version.TextColor3 = Color3.fromRGB(255, 255, 255)
+Version.TextScaled = true
+
+-- // Draggable
+local UIS = game:GetService("UserInputService")
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then dragging = false end
+		end)
+	end
+end)
+MainFrame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+UIS.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
 end)
 
--- 🎉 Pet popup above the egg
-local function spawnPetPopup(petName, age, eggName)
-    if activePetPopup then
-        activePetPopup:Destroy()
+-- // Egg Functions
+local function findEggs()
+    local eggs = {}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if EggPools[obj.Name] then
+            table.insert(eggs, obj)
+        end
     end
+    return eggs
+end
 
-    local eggPart = workspace:FindFirstChild(eggName)
-    if not eggPart then return end
-
-    local popup = Instance.new("BillboardGui", eggPart)
-    popup.Size = UDim2.new(0, 150, 0, 50)
-    popup.Adornee = eggPart
-    popup.StudsOffset = Vector3.new(0, 3, 0)
-    popup.AlwaysOnTop = true
-
-    local label = Instance.new("TextLabel", popup)
+local function ShowEggContents(eggModel, eggName)
+    if not EggPools[eggName] then return end
+    local old = eggModel:FindFirstChild("ESP_Billboard")
+    if old then old:Destroy() end
+    local billboard = Instance.new("BillboardGui", eggModel)
+    billboard.Name = "ESP_Billboard"
+    billboard.Size = UDim2.new(0, 200, 0, 100)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Adornee = eggModel
+    local label = Instance.new("TextLabel", billboard)
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.Text = "🎉 You got: " .. petName .. " (Age " .. age .. ") 🎉"
-    label.TextColor3 = Color3.fromRGB(255, 215, 0)
-    label.TextStrokeTransparency = 0.2
+    label.Text = table.concat(EggPools[eggName], ", ")
+    label.Font = Enum.Font.Gotham
+    label.TextColor3 = Color3.fromRGB(255, 255, 0)
     label.TextScaled = true
-    label.Font = Enum.Font.GothamBold
-
-    activePetPopup = popup
-    game:GetService("Debris"):AddItem(popup, 5)
 end
 
--- Randomize logic
-HatchBtn.MouseButton1Click:Connect(function()
-    if not selectedEgg then return end
-    local pool = Pets[selectedEgg]
+local function RandomizeEgg(eggModel, eggName)
+    local pool = EggPools[eggName]
     if not pool then return end
     local pet = pool[math.random(1, #pool)]
-    local age = tonumber(AgeBox.Text)
-    if not age or age < 1 or age > 100 then
-        age = math.random(1, 100)
-    end
+    local old = eggModel:FindFirstChild("Result_Billboard")
+    if old then old:Destroy() end
+    local billboard = Instance.new("BillboardGui", eggModel)
+    billboard.Name = "Result_Billboard"
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Adornee = eggModel
+    local label = Instance.new("TextLabel", billboard)
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = pet
+    label.Font = Enum.Font.GothamBold
+    label.TextColor3 = Color3.fromRGB(0, 255, 0)
+    label.TextScaled = true
+    return pet
+end
 
-    spawnPetPopup(pet, age, selectedEgg)
+-- // Button Actions
+ESPButton.MouseButton1Click:Connect(function()
+    for _, egg in pairs(findEggs()) do
+        ShowEggContents(egg, egg.Name)
+    end
 end)
 
--- ✅ Credit label
-local Credit = Instance.new("TextLabel", Frame)
-Credit.Size = UDim2.new(1,0,0,20)
-Credit.Position = UDim2.new(0,0,1,-20)
-Credit.BackgroundTransparency = 1
-Credit.Text = "Made by ScripterX"
-Credit.TextColor3 = Color3.fromRGB(255,255,255)
-Credit.Font = Enum.Font.Gotham
-Credit.TextSize = 12
+RollButton.MouseButton1Click:Connect(function()
+    for _, egg in pairs(findEggs()) do
+        RandomizeEgg(egg, egg.Name)
+    end
+end)
 
--- ✅ Close button
-local CloseBtn = Instance.new("TextButton", Frame)
-CloseBtn.Size = UDim2.new(0,25,0,25)
-CloseBtn.Position = UDim2.new(1,-30,0,5)
-CloseBtn.Text = "✖"
-CloseBtn.BackgroundColor3 = Color3.fromRGB(139,0,0)
-CloseBtn.TextColor3 = Color3.fromRGB(255,255,255)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 16
-
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+AgeButton.MouseButton1Click:Connect(function()
+    for i = 1, 50 do
+        task.wait(0.2)
+        print("Auto aging pet #" .. i) -- you can replace with actual pet aging call
+    end
 end)
