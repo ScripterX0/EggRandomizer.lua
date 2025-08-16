@@ -1,4 +1,4 @@
--- Egg Randomizer – Grow a Garden Theme by ScripterX (Modified with Pet Popup)
+-- Egg Randomizer – Grow a Garden Theme by ScripterX (Final Modified)
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -55,14 +55,14 @@ local UIListLayout = Instance.new("UIListLayout", Scroller)
 UIListLayout.Padding = UDim.new(0,4)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Hatch button  
-local HatchBtn = Instance.new("TextButton", Frame)  
-HatchBtn.Size = UDim2.new(0.9,0,0,30)  
-HatchBtn.Position = UDim2.new(0.05,0,0.65,0)  
-HatchBtn.Text = "🎲 Randomize 🎲" -- << changed text here  
-HatchBtn.BackgroundColor3 = Color3.fromRGB(46,139,87)  
-HatchBtn.TextColor3 = Color3.fromRGB(255,255,255)  
-HatchBtn.Font = Enum.Font.GothamBold  
+-- 🎲 Randomize button
+local HatchBtn = Instance.new("TextButton", Frame)
+HatchBtn.Size = UDim2.new(0.9,0,0,30)
+HatchBtn.Position = UDim2.new(0.05,0,0.65,0)
+HatchBtn.Text = "🎲 Randomize 🎲"
+HatchBtn.BackgroundColor3 = Color3.fromRGB(46,139,87)
+HatchBtn.TextColor3 = Color3.fromRGB(255,255,255)
+HatchBtn.Font = Enum.Font.GothamBold
 HatchBtn.TextSize = 14
 
 -- Age box
@@ -95,7 +95,6 @@ local Pets = {
 
 -- Variables
 local selectedEgg = nil
-local activeBillboard = nil
 local activePetPopup = nil
 
 -- Egg button generator
@@ -122,21 +121,19 @@ EggBox.MouseButton1Click:Connect(function()
     Scroller.Visible = true
 end)
 
--- Show pet popup above player
-local function spawnPetPopup(petName, age)
+-- 🎉 Pet popup above the egg
+local function spawnPetPopup(petName, age, eggName)
     if activePetPopup then
         activePetPopup:Destroy()
     end
 
-    local char = player.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
+    local eggPart = workspace:FindFirstChild(eggName)
+    if not eggPart then return end
 
-    local popup = Instance.new("BillboardGui", char)
+    local popup = Instance.new("BillboardGui", eggPart)
     popup.Size = UDim2.new(0, 150, 0, 50)
-    popup.Adornee = hrp
-    popup.StudsOffset = Vector3.new(0, 4, 0)
+    popup.Adornee = eggPart
+    popup.StudsOffset = Vector3.new(0, 3, 0)
     popup.AlwaysOnTop = true
 
     local label = Instance.new("TextLabel", popup)
@@ -149,8 +146,6 @@ local function spawnPetPopup(petName, age)
     label.Font = Enum.Font.GothamBold
 
     activePetPopup = popup
-
-    -- Auto-remove after 5 seconds
     game:GetService("Debris"):AddItem(popup, 5)
 end
 
@@ -165,5 +160,29 @@ HatchBtn.MouseButton1Click:Connect(function()
         age = math.random(1, 100)
     end
 
-    spawnPetPopup(pet, age)
+    spawnPetPopup(pet, age, selectedEgg)
+end)
+
+-- ✅ Credit label
+local Credit = Instance.new("TextLabel", Frame)
+Credit.Size = UDim2.new(1,0,0,20)
+Credit.Position = UDim2.new(0,0,1,-20)
+Credit.BackgroundTransparency = 1
+Credit.Text = "Made by ScripterX"
+Credit.TextColor3 = Color3.fromRGB(255,255,255)
+Credit.Font = Enum.Font.Gotham
+Credit.TextSize = 12
+
+-- ✅ Close button
+local CloseBtn = Instance.new("TextButton", Frame)
+CloseBtn.Size = UDim2.new(0,25,0,25)
+CloseBtn.Position = UDim2.new(1,-30,0,5)
+CloseBtn.Text = "✖"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(139,0,0)
+CloseBtn.TextColor3 = Color3.fromRGB(255,255,255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 16
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
