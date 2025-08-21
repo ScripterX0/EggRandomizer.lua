@@ -53,6 +53,89 @@ local EggPools = {
     ["Zen egg"] = {"Kitsune","Kodama","Nihonzaru","Shiba Inu","Tanchozuru","Kappa"},
 }
 
+-- ------------------------------------------------------------------
+-- NEW: Weighted chances for specific pets (others share the leftover)
+-- ------------------------------------------------------------------
+local EggChances = {
+    ["Bug egg"] = {
+        ["Dragonfly"] = 10, -- 10%
+    },
+    ["Anti Bee egg"] = {
+        ["Butterfly"] = 10, -- 10%
+        ["Disco Bee"] = 10, -- 10%
+    },
+    ["Paradise egg"] = {
+        ["Mimic Octopus"] = 10, -- 10%
+    },
+    ["Gourmet egg"] = {
+        ["Red Fox"] = 10, -- 10% (note: Red Fox is listed under Mythical egg in your pool;
+                           -- if you meant Gourmet instead, keep this. Otherwise move to Mythical.)
+    },
+    ["Zen egg"] = {
+        ["Kitsune"] = 5, -- 5%
+    },
+    ["Night egg"] = {
+        ["Raccoon"] = 10, -- 10%
+    },
+    ["Sprout egg"] = {
+        ["Golden Goose"] = 10, -- 10%
+    },
+    -- alias safety if game uses "Sprouted Egg" label somewhere:
+    ["Sprouted egg"] = {
+        ["Golden Goose"] = 10,
+    },
+}
+
+-- Helper: choose from pool using EggChances if present, else equal chance
+local function chooseFromPool(eggKey, pool)
+    local chances = EggChances[eggKey]
+    if not chances then
+        return pool[math.random(1, #pool)]
+    end
+
+    -- Sum provided chances and split leftover equally among the rest
+    local providedSum = 0
+    local weights = {}
+    local unspecified = {}
+
+    -- Build list with explicit or placeholder weights
+    for _, name in ipairs(pool) do
+        local w = chances[name]
+        if w and w > 0 then
+            providedSum += w
+            table.insert(weights, {name = name, w = w})
+        else
+            table.insert(unspecified, name)
+        end
+    end
+
+    -- Distribute remaining weight
+    local remaining = math.max(0, 100 - providedSum)
+    local share = (#unspecified > 0) and (remaining / #unspecified) or 0
+    for _, name in ipairs(unspecified) do
+        table.insert(weights, {name = name, w = share})
+    end
+
+    -- If total is 0 for any reason, fall back to equal chance
+    local total = 0
+    for _, e in ipairs(weights) do total += e.w end
+    if total <= 0 then
+        return pool[math.random(1, #pool)]
+    end
+
+    -- Weighted roll
+    local roll = math.random() * total
+    local acc = 0
+    for _, e in ipairs(weights) do
+        acc += e.w
+        if roll <= acc then
+            return e.name
+        end
+    end
+    return weights[#weights].name
+end
+-- ------------------------------------------------------------------
+
 -- case-insensitive name resolver
 local function resolveEggKey(name: string)
     if EggPools[name] then return name end
@@ -132,11 +215,12 @@ local function hideESPForEgg(eggInst: Instance)
     if bb then bb:Destroy() end
 end
 
--- Randomizer
+-- Randomizer (uses weighted chances if defined)
 local function rerollEgg(eggInst: Instance, eggKey: string)
     local pool = EggPools[eggKey]
     if not pool then return end
-    local chosen = pool[math.random(1, #pool)]
+    -- CHANGED: use weighted selection if EggChances exist
+    local chosen = chooseFromPool(eggKey, pool)
 
     local prev = eggInst:FindFirstChild("AssignedPet")
     if prev then prev:Destroy() end
