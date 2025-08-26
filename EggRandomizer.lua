@@ -68,7 +68,7 @@ local EggChances = {
         ["Mimic Octopus"] = 10, -- 10%
     },
     ["Gourmet egg"] = {
-        ["Red Fox"] = 10, -- 10% (note: Red Fox is listed under Mythical egg in your pool;
+        ["Thermidor Lobster"] = 10, -- 10% (note: Red Fox is listed under Mythical egg in your pool;
                            -- if you meant Gourmet instead, keep this. Otherwise move to Mythical.)
     },
     ["Zen egg"] = {
